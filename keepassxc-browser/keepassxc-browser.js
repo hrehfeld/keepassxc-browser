@@ -1414,21 +1414,26 @@ cip.init = function() {
     });
 };
 
+// Clears all from the content and background scripts, including autocomplete
+cip.clearAllFromPage = function() {
+    cipEvents.clearCredentials();
+
+    browser.runtime.sendMessage({
+        action: 'page_clear_logins'
+    });
+
+    // Switch back to default popup
+    browser.runtime.sendMessage({
+        action: 'get_status',
+        args: [ true ]    // Set polling to true, this is an internal function call
+    });
+};
+
 // Switch credentials if database is changed or closed
 cip.detectDatabaseChange = function(response) {
     if (document.visibilityState !== 'hidden') {
         if (response.new === '' && response.old !== '') {
-            cipEvents.clearCredentials();
-
-            browser.runtime.sendMessage({
-                action: 'page_clear_logins'
-            });
-
-            // Switch back to default popup
-            browser.runtime.sendMessage({
-                action: 'get_status',
-                args: [ true ]    // Set polling to true, this is an internal function call
-            });
+           cip.clearAllFromPage();
         } else if (response.new !== '' && response.new !== response.old) {
             _called.retrieveCredentials = false;
             browser.runtime.sendMessage({
@@ -1445,6 +1450,9 @@ cip.detectDatabaseChange = function(response) {
                 }
             });
         }
+    } else {
+        // Clera everything if document is hidden, for example when the screen is locked
+        cip.clearAllFromPage();
     }
 };
 
